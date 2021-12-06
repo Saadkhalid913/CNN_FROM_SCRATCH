@@ -9,12 +9,12 @@ Original file is located at
 
 import numpy as np
 from sklearn.datasets import make_moons 
-import matplotlib.pyplot as plt 
+# import matplotlib.pyplot as plt 
 from sklearn.metrics import accuracy_score
 from sklearn.model_selection import train_test_split
 
 n_features = 2 
-# n_samples = 2000
+n_samples = 2000
 n_classes = 2
 lr = 0.001
 
@@ -29,22 +29,28 @@ for i in range(n_samples):
 
 class NN():
   def __init__(self):
-    self.W1 = np.random.randn(n_features, 4)
-    self.B1 = np.random.randn(1, 4)
-    self.W2 = np.random.randn(4, n_classes)
-    self.B2 = np.random.randn(1, n_classes) 
+    hidden_layer_neurons = 20 
 
+    # we initialize a set of random weights and biases 
+    self.W1 = np.random.randn(n_features, hidden_layer_neurons )
+    self.B1 = np.random.randn(1, hidden_layer_neurons ) # bias must be of shape (1, num_layer_nodes)
+    self.W2 = np.random.randn(hidden_layer_neurons , n_classes)
+    self.B2 = np.random.randn(1, n_classes) # bias must be of shape (1, num_layer_nodes)
+
+
+  # sigmoid function as well as
+  # sigmoid derivative with respect to x 
   def sigmoid(self, x, derivative = False):
     if derivative:
       return self.sigmoid(x) * (1 - self.sigmoid(x))
     return 1 / (1 + np.exp(-x))
 
+
   def forward(self, x):
-    Z1 = np.dot(x, self.W1) + self.B1
-    A1 = self.sigmoid(Z1)
-    Z2 = np.dot(A1, self.W2) + self.B2
-    A2 = self.sigmoid(Z2)
-    sigmoid_output = self.sigmoid(A2)
+    Z1 = np.dot(x, self.W1) + self.B1 # unactivated L1 values 
+    A1 = self.sigmoid(Z1) # activated L1 values 
+    Z2 = np.dot(A1, self.W2) + self.B2 # unactivated L2 values 
+    A2 = self.sigmoid(Z2) # activated L1 values 
 
     return Z1, A1, Z2, A2
 
@@ -58,6 +64,8 @@ class NN():
     return A2
 
 
+  ## this is the derivative of the loss with respect to y_pred 
+  ## this will return an array of shape (num_samples, num_output_neurons)
   def MSELoss(self, y_pred, y_truth, derivative = False):
     if derivative:
       return 1 * (y_truth - y_pred)
@@ -66,12 +74,14 @@ class NN():
   def Backprop(self, n_iters=1000):
     for i in range(n_iters):
       Z1, A1, Z2, A2 = self.forward(x_train)
-      oldW2 = self.W2.copy() # we copy these weights for later 
-      DLoss = self.MSELoss(y_truth, A2,derivative = True) # Dloss/Dsigmoid output 
-      DSigmoid = self.sigmoid(Z2, derivative = True) #Dsigmoid / Dneuron_out_put_sum
-      DWeight = A1 # Dneuron_sum/Dweights
+      oldW2 = self.W2.copy() # we copy these weights for later (10, 2)
+      DLoss = self.MSELoss(y_truth, A2,derivative = True) # Dloss/Dsigmoid output (num_samples, 2)
+      DSigmoid = self.sigmoid(Z2, derivative = True) #Dsigmoid / Dneuron_out_put_sum (num_samples, 2)
+      DWeight = A1 # Dneuron_sum/Dweights (num_samples, 10)
 
-      UpdateW2 = np.dot(DWeight.T, DLoss * DSigmoid) # we transpose the weights to perform
+      delta1 = DLoss * DSigmoid # (num_samples, 2)
+
+      UpdateW2 = np.dot(DWeight.T, delta1) # we transpose the weights to perform
                                                      # dot product on the element-wise product 
                                                     # of the loss & the sigmoid derivative
                                                     # this is done because we need to take dot product 
@@ -82,16 +92,23 @@ class NN():
                                                     # delta matrix (4x2) in this case or (hidden_nodes * output_nodes)
                                                     # this is then done for each neuron and its respective weights, resulting
                                                     # in a (4x2) matrix which is the update
-      UpdateB2 = np.sum(DLoss * DSigmoid, axis = 0, keepdims=True) / n_samples
+
+      UpdateB2 = np.sum(delta1, axis = 0, keepdims=True) / n_samples
 
       self.W2 += -1 * lr * UpdateW2
       self.B2 += -1 * lr * UpdateB2
 
-      delta3 = np.dot(DLoss * DSigmoid, oldW2.T)
+      # matrix shapes 
+      # (num_samples, 2) (10, 2).T = (num_samples, 10)
+      delta2 = np.dot(delta1, oldW2.T) 
 
-      UpdateB1 = np.sum(delta3 * self.sigmoid(Z1, derivative = True), axis = 0, keepdims=True) 
 
-      UpdateW1 = np.dot(x_train.T, delta3)
+      ## gradient with respect to W1
+      GradientWRT_Z1 = delta2 * self.sigmoid(Z1, derivative = True)
+
+      UpdateB1 = np.sum(delta2 * GradientWRT_Z1, axis = 0, keepdims=True) 
+
+      UpdateW1 = np.dot(x_train.T, GradientWRT_Z1)
 
       self.W1 += -1 * lr * UpdateW1
       self.B1 += -1 * lr * UpdateB1
