@@ -14,7 +14,7 @@ from sklearn.metrics import accuracy_score
 from sklearn.model_selection import train_test_split
 
 n_features = 2 
-n_samples = 2000
+n_samples = 20000
 n_classes = 2
 lr = 0.001
 
@@ -71,7 +71,7 @@ class NN():
       return 1 * (y_truth - y_pred)
     return np.power((y_truth - y_pred), 2) / 2
 
-  def Backprop(self, n_iters=1000):
+  def Backprop(self, n_iters=100):
     for i in range(n_iters):
       Z1, A1, Z2, A2 = self.forward(x_train)
       oldW2 = self.W2.copy() # we copy these weights for later (10, 2)
@@ -81,7 +81,7 @@ class NN():
 
       delta1 = DLoss * DSigmoid # (num_samples, 2)
 
-      UpdateW2 = np.dot(DWeight.T, delta1) # we transpose the weights to perform
+      UpdateW2 = np.dot(DWeight.T, delta1)          # we transpose the weights to perform
                                                      # dot product on the element-wise product 
                                                     # of the loss & the sigmoid derivative
                                                     # this is done because we need to take dot product 
@@ -93,28 +93,47 @@ class NN():
                                                     # this is then done for each neuron and its respective weights, resulting
                                                     # in a (4x2) matrix which is the update
 
+
+      # to update the biases for the final layer, we simply
+      # take the sum of the delta on the first axis 
+      # which is a (1,2) shaped vector 
       UpdateB2 = np.sum(delta1, axis = 0, keepdims=True) / n_samples
 
+
+      # updating the weights 
       self.W2 += -1 * lr * UpdateW2
       self.B2 += -1 * lr * UpdateB2
 
       # matrix shapes 
       # (num_samples, 2) (10, 2).T = (num_samples, 10)
+      # we take the dot product of the delta
+      # with the old weights, this is distributing the
+      # gradient with respect to each old weight in the 
+      # hidden layer 
       delta2 = np.dot(delta1, oldW2.T) 
 
 
       ## gradient with respect to W1
+
+      # we then multiply the above gradient with the 
+      # derivative of the gradient with respect to the
+      # unactivated sigmoid input (Z1)
       GradientWRT_Z1 = delta2 * self.sigmoid(Z1, derivative = True)
 
-      UpdateB1 = np.sum(delta2 * GradientWRT_Z1, axis = 0, keepdims=True) 
+      # the sum of this gradient with respect to the unactivated inputs
+      # is the bias 
+      UpdateB1 = np.sum(GradientWRT_Z1, axis = 0, keepdims=True) 
 
+      # we calculate the loss of each neuron in the 
+      # input layer (this is just the training data)
+      # and that is the update for W1
       UpdateW1 = np.dot(x_train.T, GradientWRT_Z1)
 
       self.W1 += -1 * lr * UpdateW1
       self.B1 += -1 * lr * UpdateB1
 
-for i in range(5):
-  n = NN()
-  n.Backprop()
-  pred = np.argmax(n.predict(x_test), axis = 1)
-  print(accuracy_score(pred, y_test))
+
+n = NN()
+n.Backprop()
+pred = np.argmax(n.predict(x_test), axis = 1)
+print(accuracy_score(pred, y_test))
