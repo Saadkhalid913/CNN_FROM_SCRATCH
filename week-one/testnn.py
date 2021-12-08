@@ -7,9 +7,13 @@ Original file is located at
     https://colab.research.google.com/drive/12jgXpF6e_SIpUNE0WILdl4Txwn4k8QLx
 """
 
+'''
+  This is the second iteration of the neural 
+  network, generalized to have 3 layers. 
+'''
+
 import numpy as np
 from sklearn.datasets import make_moons 
-# import matplotlib.pyplot as plt 
 from sklearn.metrics import accuracy_score
 from sklearn.model_selection import train_test_split
 
@@ -68,7 +72,7 @@ class NN():
   ## this will return an array of shape (num_samples, num_output_neurons)
   def MSELoss(self, y_pred, y_truth, derivative = False):
     if derivative:
-      return 1 * (y_truth - y_pred)
+      return -1 * (y_truth - y_pred)
     return np.power((y_truth - y_pred), 2) / 2
 
   def Backprop(self, n_iters=100):
