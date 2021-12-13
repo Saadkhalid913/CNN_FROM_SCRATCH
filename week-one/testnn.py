@@ -7,13 +7,10 @@ Original file is located at
     https://colab.research.google.com/drive/12jgXpF6e_SIpUNE0WILdl4Txwn4k8QLx
 """
 
-'''
-  This is the second iteration of the neural 
-  network, generalized to have 3 layers. 
-'''
 
 import numpy as np
 from sklearn.datasets import make_moons 
+# import matplotlib.pyplot as plt 
 from sklearn.metrics import accuracy_score
 from sklearn.model_selection import train_test_split
 
