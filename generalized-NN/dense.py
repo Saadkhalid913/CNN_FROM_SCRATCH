@@ -36,7 +36,7 @@ class Dense():
         return Z1, A1
 
 
-    def Backprop(self, Z1: np.array, A0: np.array, gradient: np.array, learning_rate = 0.001, next_weights=None):
+    def Backprop(self, Z1: np.array, A0: np.array, gradient: np.array, learning_rate = 0.0, next_weights=None):
         # Z1: Unactivated outputs for this layer 
         # A0: Activated outputs of previous layer 
         # Gradient: Gradient with respect to the weights 

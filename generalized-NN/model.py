@@ -1,37 +1,17 @@
-from re import X
 import numpy as np
-
 from sklearn.datasets import make_moons 
 # import matplotlib.pyplot as plt 
 from sklearn.metrics import accuracy_score
 from sklearn.model_selection import train_test_split
+from Activations import sigmoid
+from Loss_Functions import MSELoss
+from Dense import Dense
 
-from dense import Dense
 
-
-n_features = 2 
-n_samples = 10000
-n_classes = 2
-lr = 0.01
-
-x,y = make_moons(n_samples)
-x_train, x_test, y_train, y_test = train_test_split(x,y)
-
-n_samples = x_train.shape[0]
-
-y_truth = np.zeros((n_samples, 2))
-
-for i in range(n_samples):
-  y_truth[i][y_train[i]] = 1
-
-def MSELoss(y_pred, y_truth, derivative = False):
-    if derivative:
-      return -1 * (y_truth - y_pred)
-    return np.power((y_truth - y_pred), 2) / 2
 
 
 class Model():
-    def __init__(self, epochs: int, learning_rate=0.001):
+    def __init__(self, epochs: int, learning_rate=0.0):
         self.layers = []
         self.learning_rate = learning_rate
         self.epochs = epochs
@@ -46,6 +26,8 @@ class Model():
             Z1, A1 = layer.Forward(A1)
         
         return Z1, A1 
+    
+    
 
     def Backprop(self, x, y):
         for i in range(self.epochs):
@@ -71,7 +53,7 @@ class Model():
                 # for backprop in the previous layer
                 A0 = layer.Old_A0
                 Z1 = layer.Old_Z1
-                gradient = layer.Backprop(Z1, A0, gradient)
+                gradient = layer.Backprop(Z1, A0, gradient, learning_rate = self.learning_rate)
 
 
 
@@ -99,21 +81,34 @@ class Model():
 
         
 
-def sigmoid(x, derivative = False):
-    if derivative:
-      return sigmoid(x) * (1 - sigmoid(x))
-    return 1 / (1 + np.exp(-x))
+if __name__ == "__main__":
+    for i in range(10):
+        n_features = 2 
+        n_samples = 10000
+        n_classes = 2
+        lr = 0.01
+
+        x,y = make_moons(n_samples)
+        x_train, x_test, y_train, y_test = train_test_split(x,y)
+
+        n_samples = x_train.shape[0]
+
+        y_truth = np.zeros((n_samples, 2))
+
+        for i in range(n_samples):
+            y_truth[i][y_train[i]] = 1
 
 
-m = Model(epochs=1000, learning_rate=0.001)
-m.add(Dense(2, 10, sigmoid))
-m.add(Dense(10, 2, sigmoid))
+        m = Model(epochs=1000, learning_rate=0.005)
+        L1 = Dense(2, 10, sigmoid)
+        L2 = Dense(10, 2, sigmoid)
+        m.add(L1)
+        m.add(L2)
+        m.Backprop(x_train, y_truth)
 
-m.Backprop(x_train, y_truth)
-
-Z1, A1 = m._forward(x_test)
+        Z1, A1 = m._forward(x_test)
 
 
-results = np.argmax(A1, axis = 1)
-print(np.sum(results == y_test) / len(y_test))
+        results = np.argmax(A1, axis = 1)
+        print(100 * np.sum(results == y_test) / len(y_test) , "%")
 
