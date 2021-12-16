@@ -43,11 +43,10 @@ def sigmoid(x, derivative = False):
     return 1 / (1 + np.exp(-x))
 
 class Dense():
-    def __init__(self, input_neurons: int, output_neurons: int, activation, learning_rate: float):
+    def __init__(self, input_neurons: int, output_neurons: int, activation):
         self.Weights = np.random.randn(input_neurons, output_neurons)
         self.Biases = np.random.randn(1, output_neurons)
         self.Activation = activation
-        self.LR = learning_rate
 
     def Forward(self, x: np.array):
         assert x.shape[1] == self.Weights.shape[0]
@@ -57,7 +56,7 @@ class Dense():
         return Z1, A1
 
 
-    def Backprop(self, Z1: np.array, A0: np.array, gradient: np.array, next_weights=None):
+    def Backprop(self, Z1: np.array, A0: np.array, gradient: np.array, learning_rate = 0.001, next_weights=None):
         assert gradient.shape[1] == self.Weights.shape[1]
         OldWeights = self.Weights.copy()
         if not next_weights:
@@ -69,8 +68,8 @@ class Dense():
         WeightUpdate = np.dot(A0.T, delta) 
         BiasUpdate = np.sum(delta, axis = 0, keepdims=True)
 
-        self.Weights += -self.LR * WeightUpdate
-        self.Biases += -self.LR * BiasUpdate
+        self.Weights += -learning_rate * WeightUpdate
+        self.Biases += -learning_rate * BiasUpdate
 
         return np.dot(delta, OldWeights.T)
 
