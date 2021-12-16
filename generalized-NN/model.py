@@ -1,20 +1,20 @@
 import numpy as np
 from sklearn.datasets import make_moons 
-# import matplotlib.pyplot as plt 
 from sklearn.metrics import accuracy_score
 from sklearn.model_selection import train_test_split
 from Activations import sigmoid
-from Loss_Functions import MSELoss
+from Loss_Functions import MSELoss, MAELoss
 from Dense import Dense
 
 
 
 
 class Model():
-    def __init__(self, epochs: int, learning_rate=0.0):
+    def __init__(self, epochs: int, learning_rate=0.0, loss=MSELoss):
         self.layers = []
         self.learning_rate = learning_rate
         self.epochs = epochs
+        self.loss = loss 
 
     def add(self, layer: Dense):
         self.layers.append(layer)
@@ -37,7 +37,7 @@ class Model():
             # the initial gradient will be 
             # the derivative of the loss with 
             # respect to y_pred 
-            gradient = MSELoss(A, y, derivative=True)
+            gradient = self.loss(A, y, derivative=True)
 
             
 
@@ -82,7 +82,7 @@ class Model():
         
 
 if __name__ == "__main__":
-    for i in range(10):
+    for i in range(5):
         n_features = 2 
         n_samples = 10000
         n_classes = 2
@@ -99,7 +99,7 @@ if __name__ == "__main__":
             y_truth[i][y_train[i]] = 1
 
 
-        m = Model(epochs=1000, learning_rate=0.005)
+        m = Model(epochs=1000, learning_rate=0.005, loss=MAELoss)
         L1 = Dense(2, 10, sigmoid)
         L2 = Dense(10, 2, sigmoid)
         m.add(L1)
@@ -110,5 +110,35 @@ if __name__ == "__main__":
 
 
         results = np.argmax(A1, axis = 1)
-        print(100 * np.sum(results == y_test) / len(y_test) , "%")
+        print("MAELoss", 100 * np.sum(results == y_test) / len(y_test) , "%")
+
+    for i in range(5):
+        n_features = 2 
+        n_samples = 10000
+        n_classes = 2
+        lr = 0.01
+
+        x,y = make_moons(n_samples)
+        x_train, x_test, y_train, y_test = train_test_split(x,y)
+
+        n_samples = x_train.shape[0]
+
+        y_truth = np.zeros((n_samples, 2))
+
+        for i in range(n_samples):
+            y_truth[i][y_train[i]] = 1
+
+
+        m = Model(epochs=1000, learning_rate=0.005, loss=MSELoss)
+        L1 = Dense(2, 10, sigmoid)
+        L2 = Dense(10, 2, sigmoid)
+        m.add(L1)
+        m.add(L2)
+        m.Backprop(x_train, y_truth)
+
+        Z1, A1 = m._forward(x_test)
+
+
+        results = np.argmax(A1, axis = 1)
+        print("MSELoss", 100 * np.sum(results == y_test) / len(y_test) , "%")
 
