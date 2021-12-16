@@ -40,19 +40,35 @@ class Model():
         self.layers.append(layer)
 
     def _forward(self, x):
-        Z1 = None
-        A1 = x 
+        Z1 = None # unactivated output  
+        A1 = x    # activated output 
         for layer in self.layers:
             Z1, A1 = layer.Forward(A1)
         
-        return Z1, A1
+        return Z1, A1 
 
     def Backprop(self, x, y):
         for i in range(self.epochs):
+            # We keep track of the activated and unactivated output 
             Z, A = self._forward(x)
+
+            # the initial gradient will be 
+            # the derivative of the loss with 
+            # respect to y_pred 
             gradient = MSELoss(A, y, derivative=True)
+
+            
+
             for i in range(len(self.layers) -1 , -1, -1):
+                # we interate through each layer in the 
+                # network and calculate the gradients 
+                # with respect to the input values 
                 layer = self.layers[i]
+
+                # We extract the unactivated output 
+                # as well as the inputs of the layer 
+                # from the internal state, this is used 
+                # for backprop in the previous layer
                 A0 = layer.Old_A0
                 Z1 = layer.Old_Z1
                 gradient = layer.Backprop(Z1, A0, gradient)
@@ -60,11 +76,21 @@ class Model():
 
 
     def fit(self, x, y):
+
+        # we extract the shape of the inputs 
         n_samples_x, input_neurons = x.shape
         n_samples_y, output_neuons = y.shape
 
+
+        # we assert that the validation data
+        # has the same number of samples as 
+        # the input data 
         assert n_samples_y == n_samples_x 
 
+
+        # we create input layers as well as the output 
+        # layer to correspond to the features of x and 
+        # and the shape of y 
         input_layer = Dense(input_neurons, self.layers[0].input_neurons, activation=sigmoid)
         self.layers.insert(0, input_layer)
 
