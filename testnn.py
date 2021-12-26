@@ -6,6 +6,87 @@ from sklearn.datasets import make_moons
 from sklearn.metrics import accuracy_score
 from sklearn.model_selection import train_test_split
 
+import numpy as np 
+
+class Dense():
+    def __init__(self, input_neurons: int, output_neurons: int, activation):
+        # Create weights of shape (num_inputs, num_outputs)
+        self.Weights = np.random.randn(input_neurons, output_neurons)
+
+        # Create bias of shape (1, num_outputs)
+        self.Biases = np.random.randn(1, output_neurons)
+
+        # Define Activation Functions 
+        self.Activation = activation
+
+        self.input_neruons = input_neurons
+
+        self.output_neurons = output_neurons
+
+        self.Old_A0 = None
+        self.Old_Z1 = None
+
+    def Forward(self, x: np.array):
+
+        # Check if dot product between inputs 
+        # and weights is defined 
+        assert x.shape[1] == self.Weights.shape[0]
+
+        # Unactivated Dot Product 
+        Z1 = np.dot(x, self.Weights)
+
+        self.Old_A0 = x
+        self.Old_Z1 = Z1
+
+        # Activated Dot Product 
+        A1 = self.Activation(Z1)
+
+        return Z1, A1
+
+
+    def Backprop(self, Z1: np.array, A0: np.array, gradient: np.array, learning_rate = 0.0):
+        # Z1: Unactivated outputs for this layer 
+        # A0: Activated outputs of previous layer 
+        # Gradient: Gradient with respect to the weights 
+
+        ## Assert that the gradient
+        ## has the same number of neurons 
+        ## as the outputs 
+        assert gradient.shape[1] == self.Weights.shape[1]
+
+        ## Copy the weights to pass to previous 
+        ## Layers gradient 
+        OldWeights = self.Weights.copy()
+
+        ## if there are no forward weights, 
+        ## we take the gradient only 
+
+        delta = self.Activation(Z1, derivative = True) *  gradient # (samples, output_weights) 
+        # else:
+        #     # (samples, output_weights) * (output_weights, next_layer_weights) DOT (samples, output_weights)
+        #     # The total error is defined as element-wise multiplication of 
+        #     # derivative of activation with respect to its input 
+        #     # and the gradient of each respective weight 
+        #     print(next_weights.shape, gradient.shape)
+        #     delta = self.Activation(Z1, derivative = True) *  np.dot(next_weights, gradient) 
+        
+        # weight is updated with respect 
+        # to the error times each input 
+        # value of the neuron in the previous 
+        # layer 
+        WeightUpdate = np.dot(A0.T, delta)  
+        BiasUpdate = np.sum(delta, axis = 0, keepdims=True)
+
+        # we update both of the weights
+        self.Weights += -learning_rate * WeightUpdate
+        self.Biases += -learning_rate * BiasUpdate
+        
+        # we return the gradient 
+        # with respect to the current weights 
+        return np.dot(delta, OldWeights.T)
+
+
+
 
 n_features = 2 
 n_samples = 2000
@@ -32,52 +113,22 @@ def sigmoid(x, derivative = False):
       return sigmoid(x) * (1 - sigmoid(x))
     return 1 / (1 + np.exp(-x))
 
+L1 = Dense(2, 10, sigmoid)
+L2 = Dense(10, 2, sigmoid)
 
 
+for i in range(10000):
+    Z1, A1, = L1.Forward(x_train)
+    Z2, A2, = L2.Forward(A1)
+
+    loss = MSELoss(A2, y_truth, derivative=True)
+
+    grad = L2.Backprop(Z2, A1, loss, learning_rate=0.001) 
+    L1.Backprop(Z1, x_train, grad, learning_rate=0.001)
 
 
-class Dense():
-    def __init__(self, input_neurons: int, output_neurons: int, activation, learning_rate: float):
-        self.Weights = np.random.randn(input_neurons, output_neurons)
-        self.Biases = np.random.randn(1, output_neurons)
-        self.Activation = activation
-        self.LR = learning_rate
+Z1, A1, = L1.Forward(x_test)
+Z2, A2, = L2.Forward(A1)
 
-    def Forward(self, x: np.array):
-        assert x.shape[1] == self.Weights.shape[0]
-        Z1 = np.dot(x, self.Weights)
-        A1 = self.Activation(Z1)
-
-        return Z1, A1
-
-
-    def Backprop(self, Z1: np.array, A1: np.array, gradient: np.array, next_weights=None):
-        assert gradient.shape[1] == self.Weights.shape[1]
-        
-        if not next_weights:
-            delta = self.Activation(Z1, derivative = True) *  gradient # (samples, output_weights) 
-        else:
-            # (samples, output_weights) * (output_weights, next_layer_weights) DOT (samples, output_weights)
-            delta = self.Activation(Z1, derivative = True) *  np.dot(next_weights, gradient) 
-
-        WeightUpdate = np.dot(A1.T, delta) 
-        BiasUpdate = np.sum(delta, axis = 0, keepdims=True)
-
-        self.Weights += -self.LR * WeightUpdate
-        self.Biases += -self.LR * BiasUpdate
-
-        return np.dot(delta,self.Weights.T)
-
-D1 = Dense(input_neurons=2, output_neurons=10, activation=sigmoid, learning_rate=1)
-D2 = Dense(input_neurons=10, output_neurons=2, activation=sigmoid, learning_rate=1)
-
-Z1, A1 = D1.Forward(x_train)
-Z2, A2 = D2.Forward(A1)
-
-
-
-loss = MSELoss(y_truth, A2, derivative=True)
-
-gradient = D2.Backprop(Z2, A1, loss)
-
-print(gradient.shape)
+pred = np.argmax(A2, axis = 1)
+print(np.sum(pred == y_test) / len(y_test))

@@ -2,7 +2,7 @@ import numpy as np
 from sklearn.datasets import make_moons 
 from sklearn.metrics import accuracy_score
 from sklearn.model_selection import train_test_split
-from Activations import sigmoid
+from Activations import sigmoid, Relu
 from Loss_Functions import MSELoss, MAELoss
 from Dense import Dense
 
@@ -99,9 +99,9 @@ if __name__ == "__main__":
             y_truth[i][y_train[i]] = 1
 
 
-        m = Model(epochs=1000, learning_rate=0.005, loss=MAELoss)
-        L1 = Dense(2, 10, sigmoid)
-        L2 = Dense(10, 2, sigmoid)
+        m = Model(epochs=1000, learning_rate=0.005, loss=MSELoss)
+        L1 = Dense(2, 10, Relu)
+        L2 = Dense(10, 2, Relu)
         m.add(L1)
         m.add(L2)
         m.Backprop(x_train, y_truth)
@@ -110,8 +110,7 @@ if __name__ == "__main__":
 
 
         results = np.argmax(A1, axis = 1)
-        print("MAELoss", 100 * np.sum(results == y_test) / len(y_test) , "%")
-
+        print("ReLu - ", 100 * np.sum(results == y_test) / len(y_test) , "%")
     for i in range(5):
         n_features = 2 
         n_samples = 10000
@@ -140,5 +139,5 @@ if __name__ == "__main__":
 
 
         results = np.argmax(A1, axis = 1)
-        print("MSELoss", 100 * np.sum(results == y_test) / len(y_test) , "%")
+        print("Sigmoid - ", 100 * np.sum(results == y_test) / len(y_test) , "%")
 
